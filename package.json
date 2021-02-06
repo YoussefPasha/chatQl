@@ -1,0 +1,28 @@
+{
+  "dependencies": {
+    "apollo-server": "^2.19.2",
+    "graphql": "^15.5.0"
+  },
+  "scripts": {
+    "dev": "nodemon server.js",
+    "start": "node server.js"
+  },
+  "name": "chat",
+  "description": "- [x] [React](google)\r - [x] [Apollo Server](google)\r - [x] [GraphQl](google)",
+  "version": "1.0.0",
+  "main": "server.js",
+  "devDependencies": {
+    "nodemon": "^2.0.7"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/YoussefPasha/chatQl.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/YoussefPasha/chatQl/issues"
+  },
+  "homepage": "https://github.com/YoussefPasha/chatQl#readme"
+}
