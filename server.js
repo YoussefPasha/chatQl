@@ -1,28 +1,8 @@
 const { ApolloServer, gql } = require("apollo-server");
+const { sequelize } = require("./models");
 
-// The GraphQL schema
-const typeDefs = gql`
-  type User {
-    userName: String!
-    email: String!
-  }
-  type Query {
-    getUsers: [User]!
-  }
-`;
-
-// A map of functions which return data for the schema.
-const resolvers = {
-  Query: {
-    getUsers: () => {
-      const users = [
-        { userName: "john", email: "john@gmail.com" },
-        { userName: "jane", email: "jane@gmail.com" },
-      ];
-      return users;
-    },
-  },
-};
+const typeDefs = require("./graphQl/typeDefs");
+const resolvers = require("./graphQl/resolvers");
 
 const server = new ApolloServer({
   typeDefs,
@@ -31,4 +11,8 @@ const server = new ApolloServer({
 
 server.listen().then(({ url }) => {
   console.log(`🚀 Server ready at ${url}`);
+  sequelize
+    .authenticate()
+    .then(() => console.log("Database connected"))
+    .catch((err) => console.error(err));
 });
