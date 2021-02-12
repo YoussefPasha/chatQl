@@ -1,16 +1,13 @@
 import React from "react";
-import { Container, Row, Col } from "react-bootstrap";
+import { Container } from "react-bootstrap";
+import { Register } from "./pages";
 
 import "./App.scss";
 
 function App() {
   return (
-    <Container className="App">
-      <Row>
-        <Col>
-          <h1>Register</h1>
-        </Col>
-      </Row>
+    <Container className="pt-5">
+      <Register />
     </Container>
   );
 }
