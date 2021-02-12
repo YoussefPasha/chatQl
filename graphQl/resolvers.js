@@ -2,16 +2,30 @@ const { User } = require("../models");
 const bcrypt = require("bcryptjs");
 const { UserInputError, AuthenticationError } = require("apollo-server");
 const jwt = require("jsonwebtoken");
+const { Op } = require("sequelize");
 const { JWT_SECRET } = require("../config/env.json");
 
 module.exports = {
   Query: {
-    getUsers: async () => {
+    getUsers: async (_, __, context) => {
       try {
-        const users = await User.findAll();
+        let user;
+        if (context.req && context.req.headers.authorization) {
+          const token = context.req.headers.authorization.split("Bearer ")[1];
+          jwt.verify(token, JWT_SECRET, (err, decodedToken) => {
+            if (err) {
+              throw new AuthenticationError("Unauthenticated");
+            }
+            user = decodedToken;
+          });
+        }
+        const users = await User.findAll({
+          where: { userName: { [Op.ne]: user.userName } },
+        });
         return users;
       } catch (error) {
         console.error(error);
+        throw error;
       }
     },
     login: async (_, args) => {
@@ -62,7 +76,6 @@ module.exports = {
       let { userName, email, password, confirmPassword } = args;
       let errors = {};
       try {
-        //TODO: Validate input data
         if (email.trim() === "") errors.email = "Email must not be empty";
         if (password.trim() === "")
           errors.password = "Password must not be empty";
@@ -71,26 +84,21 @@ module.exports = {
         if (userName.trim() === "")
           errors.userName = "Username must not be empty";
 
-        //TODO: Check if userName / email exists
         if (Object.keys(errors).length > 0) {
           throw errors;
         }
 
-        //TODO: Check password and confirmation password
         if (password !== confirmPassword)
           errors.confirmPassword = "Passwords must match";
 
-        //TODO: Hash password
         password = await bcrypt.hash(password, 6);
 
-        //TODO: Create user
         const user = await User.create({
           userName,
           email,
           password,
         });
 
-        //TODO: Return user
         return user;
       } catch (error) {
         console.error(error);
