@@ -1,24 +1,15 @@
-const { User } = require("../models");
 const bcrypt = require("bcryptjs");
 const { UserInputError, AuthenticationError } = require("apollo-server");
 const jwt = require("jsonwebtoken");
 const { Op } = require("sequelize");
-const { JWT_SECRET } = require("../config/env.json");
+const { User } = require("../../models");
+const { JWT_SECRET } = require("../../config/env.json");
 
 module.exports = {
   Query: {
-    getUsers: async (_, __, context) => {
+    getUsers: async (_, __, { user }) => {
       try {
-        let user;
-        if (context.req && context.req.headers.authorization) {
-          const token = context.req.headers.authorization.split("Bearer ")[1];
-          jwt.verify(token, JWT_SECRET, (err, decodedToken) => {
-            if (err) {
-              throw new AuthenticationError("Unauthenticated");
-            }
-            user = decodedToken;
-          });
-        }
+        if (!user) throw new AuthenticationError("Unauthenticated");
         const users = await User.findAll({
           where: { userName: { [Op.ne]: user.userName } },
         });
