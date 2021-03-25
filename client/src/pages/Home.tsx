@@ -1,35 +1,60 @@
-import React, { Fragment } from "react";
-import { Button, Col, Row } from "react-bootstrap";
-import { Link, useHistory } from "react-router-dom";
-import { gql, useQuery } from "@apollo/client";
+import React, { Fragment, useEffect, useState } from "react";
+import { Button, Col, Image, Row } from "react-bootstrap";
+import { Link } from "react-router-dom";
+import { gql, useQuery, useLazyQuery } from "@apollo/client";
 import { useAuthDispatch } from "../context/auth";
 
 const GET_USERS = gql`
   query getUsers {
     getUsers {
       userName
-      email
+      createdAt
+      imageUrl
+      latestMessage {
+        uuid
+        from
+        to
+        content
+        createdAt
+      }
+    }
+  }
+`;
+
+const GET_MESSAGES = gql`
+  query getMessages($from: String!) {
+    getMessages(from: $from) {
+      uuid
+      from
+      to
+      content
       createdAt
     }
   }
 `;
 
-export default function Home() {
+export default function Home({ history }: any) {
   const dispatch: any = useAuthDispatch();
-  const history = useHistory();
+  const [selectedUser, setSelectedUser] = useState(null);
   const logout = () => {
     dispatch({ type: "LOGOUT" });
     history.push("/login");
   };
-
   const { loading, data, error } = useQuery(GET_USERS);
 
-  if (error) {
-    console.log(error);
-  }
+  const [
+    getMessages,
+    { loading: messagesLoading, data: messagesData },
+  ] = useLazyQuery(GET_MESSAGES);
 
-  if (data) {
-    console.log(data);
+  useEffect(() => {
+    if (selectedUser) {
+      getMessages({ variables: { from: selectedUser } });
+    }
+  }, [selectedUser]);
+
+  if (messagesData) {
+    console.log(messagesData);
   }
 
   let userMarkups;
@@ -39,11 +64,29 @@ export default function Home() {
     userMarkups = <p> There is no users</p>;
   } else if (data.getUsers.length > 0) {
     userMarkups = data.getUsers.map((user: any) => (
-      <div key={user.userName}>
-        <p>{user.userName}</p>
+      <div
+        className="d-flex p-3"
+        key={user.userName}
+        onClick={() => setSelectedUser(user.userName)}
+      >
+        <Image
+          src={user.imageUrl}
+          roundedCircle
+          className="mr-2"
+          style={{ width: 50, height: 50, objectFit: "cover" }}
+        />
+        <div>
+          <p className="text-success">{user.userName}</p>
+          <p className="font-weight-light">
+            {user.latestMessage
+              ? user.latestMessage.content
+              : "You are noe connected"}
+          </p>
+        </div>
       </div>
     ));
   }
+
   return (
     <Fragment>
       <Row className="bg-white justify-content-around mb-1">
@@ -58,9 +101,17 @@ export default function Home() {
         </Button>
       </Row>
       <Row className="bg-white  ">
-        <Col xs={4}>{userMarkups}</Col>
+        <Col xs={4} className="p-0 bg-secondary">
+          {userMarkups}
+        </Col>
         <Col xs={4}>
-          <p>Messages</p>
+          {messagesData && messagesData.getMessages.length > 0 ? (
+            messagesData.getMessages.map((message: any) => (
+              <p key={message.uuid}> {message.content} </p>
+            ))
+          ) : (
+            <p>Messages</p>
+          )}
         </Col>
       </Row>
     </Fragment>

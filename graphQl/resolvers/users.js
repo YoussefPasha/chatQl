@@ -2,7 +2,7 @@ const bcrypt = require("bcryptjs");
 const { UserInputError, AuthenticationError } = require("apollo-server");
 const jwt = require("jsonwebtoken");
 const { Op } = require("sequelize");
-const { User } = require("../../models");
+const { User, Message } = require("../../models");
 const { JWT_SECRET } = require("../../config/env.json");
 
 module.exports = {
@@ -10,9 +10,27 @@ module.exports = {
     getUsers: async (_, __, { user }) => {
       try {
         if (!user) throw new AuthenticationError("Unauthenticated");
-        const users = await User.findAll({
+
+        let users = await User.findAll({
+          attributes: ["userName", "imageUrl", "createdAt"],
           where: { userName: { [Op.ne]: user.userName } },
         });
+
+        const allUserMessages = await Message.findAll({
+          where: {
+            [Op.or]: [{ from: user.userName }, { to: user.userName }],
+          },
+          order: [["createdAt", "DESC"]],
+        });
+        console.log(allUserMessages);
+        users = users.map((otherUser) => {
+          const latestMessage = allUserMessages.find(
+            (m) => m.from === otherUser.userName || m.to === otherUser.userName
+          );
+          otherUser.latestMessage = latestMessage;
+          return otherUser;
+        });
+
         return users;
       } catch (error) {
         console.error(error);
@@ -53,7 +71,7 @@ module.exports = {
         );
         return {
           ...user.toJSON(),
-          createdAt: user.createdAt.toISOString(),
+          //createdAt: user.createdAt.toISOString(),
           token,
         };
       } catch (error) {
